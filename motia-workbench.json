@@ -43,8 +43,8 @@
         "y": 321
       },
       "src/github-wrapped/api/get-wrapped-status.step.ts": {
-        "x": 319,
-        "y": 335
+        "x": 406,
+        "y": 293
       },
       "src/github-wrapped/api/get-badge.step.ts": {
         "x": 1266,

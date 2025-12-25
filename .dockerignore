@@ -1,0 +1,9 @@
+node_modules
+.motia
+dist
+.git
+.vscode
+.cursor
+*.log
+.env
+.env.*

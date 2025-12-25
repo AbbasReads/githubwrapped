@@ -1,53 +1,40 @@
 // Serve CSS Static Files
 import { ApiRouteConfig, Handlers } from 'motia'
 import { z } from 'zod'
-import * as fs from 'fs'
-import * as path from 'path'
+import { getStaticAsset, getStaticContent } from '../static-assets.js'
 
 export const config: ApiRouteConfig = {
-    type: 'api',
-    name: 'ServeStaticCSS',
-    description: 'Serves CSS files from public/css directory',
-    flows: ['github-wrapped'],
-    method: 'GET',
-    path: '/static/css/:filename',
-    responseSchema: {
-        200: z.any(),
-        404: z.object({ error: z.string() }),
-    },
-    emits: [],
+  type: 'api',
+  name: 'ServeStaticCSS',
+  description: 'Serves CSS files from bundled assets',
+  flows: ['github-wrapped'],
+  method: 'GET',
+  path: '/static/css/:filename',
+  responseSchema: {
+    200: z.any(),
+    404: z.object({ error: z.string() }),
+  },
+  emits: [],
 }
 
 export const handler: Handlers['ServeStaticCSS'] = async (req, { logger }) => {
-    const { filename } = req.pathParams
-    const sanitized = path.basename(filename)
-    const cwd = process.cwd() || '/app'
-    
-    const possiblePaths = [
-        path.resolve(cwd, 'public', 'css', sanitized),
-        path.resolve(cwd, '..', 'public', 'css', sanitized),
-        path.resolve('/app', 'public', 'css', sanitized),
-    ]
+  const { filename } = req.pathParams
+  const assetPath = `css/${filename}`
 
-    logger.info('Serving CSS file', { filename: sanitized })
+  logger.info('Serving CSS file', { filename })
 
-    let filePath: string | null = null
-    for (const testPath of possiblePaths) {
-        if (fs.existsSync(testPath)) {
-            filePath = testPath
-            break
-        }
-    }
+  const asset = getStaticAsset(assetPath)
+  
+  if (!asset) {
+    logger.warn('CSS file not found', { filename, assetPath })
+    return { status: 404, body: { error: `File "${filename}" not found` } }
+  }
 
-    if (!filePath) {
-        logger.warn('CSS file not found', { filename: sanitized, triedPaths: possiblePaths })
-        return { status: 404, body: { error: `File "${sanitized}" not found` } }
-    }
-
-    const content = fs.readFileSync(filePath)
-    return {
-        status: 200,
-        headers: { 'Content-Type': 'text/css', 'Cache-Control': 'public, max-age=31536000' },
-        body: content,
-    }
+  const content = getStaticContent(assetPath)
+  
+  return {
+    status: 200,
+    headers: { 'Content-Type': 'text/css', 'Cache-Control': 'public, max-age=31536000' },
+    body: content,
+  }
 }
